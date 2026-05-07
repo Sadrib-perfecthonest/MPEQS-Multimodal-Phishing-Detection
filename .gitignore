@@ -1,0 +1,8 @@
+.venvpy3.10.0/
+saved_models/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.env
+.vscode/
+.idea/
