@@ -1,9 +1,9 @@
 # MPEQS: A Multimodal Framework for Detecting Phishing Emails, Quishing, and Smishing Attacks
 
-![Phishing Detection Example](Phishing.jpg)
+![Phishing Detection Example](Phishing pic.jpg)
 *Example: Email phishing detection with 89% confidence*
 
-![Benign Detection Example](Phishingnew.jpg)
+![Benign Detection Example](Phishing pic1.jpg)
 *Example: Benign content detection with 88.8% confidence*
 
 ---
@@ -13,6 +13,15 @@
 MPEQS is a novel multimodal framework that simultaneously detects **Phishing Emails**, **Quishing (QR code phishing)**, and **Smishing (SMS phishing)** attacks. Unlike traditional systems that analyze each threat vector in isolation, MPEQS uses three specialized encoders (ELECTRA for emails, MobileNetV2 for QR codes, DistilBERT for SMS) with a cross-attention fusion mechanism to learn relationships between modalities. The framework outputs five fine-grained attack classifications: Benign, Phishing-only, Quishing-only, Smishing-only, or Mixed Attack, enabling targeted incident response.
 
 ---
+## 📸 Project Preview
+![Phishing Detection Example](./Phishing%20pic.jpg)
+*Example: Email phishing detection with 89% confidence*
+
+![Benign Detection Example](./Phishing%20pic1.jpg)
+*Example: Benign content detection with 88.8% confidence*
+
+---
+
 
 ## Libraries Used
 
