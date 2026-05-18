@@ -5,6 +5,10 @@
 
 ![Benign Detection Example](Phishing pic1.jpg)
 *Example: Benign content detection with 88.8% confidence*
+## 📸 Project Preview
+
+![NeuraChat](Phishing%20pic.jpg)
+
 
 ---
 
