@@ -1,11 +1,5 @@
 # MPEQS: A Multimodal Framework for Detecting Phishing Emails, Quishing, and Smishing Attacks
 
-![Phishing Detection Example](Phishingnew.jpg)
-*Example: Email phishing detection with 89% confidence*
-
-![Benign Detection Example](Phishing.jpg)
-*Example: Benign content detection with 88.8% confidence*
-
 ---
 
 ## Introduction
@@ -14,10 +8,11 @@ MPEQS is a novel multimodal framework that simultaneously detects **Phishing Ema
 
 ---
 ## 📸 Project Preview
-![Phishing Detection Example](./Phishing%20pic.jpg)
+
+![Phishing Detection Example](Phishingnew.jpg)
 *Example: Email phishing detection with 89% confidence*
 
-![Benign Detection Example](./Phishing%20pic1.jpg)
+![Benign Detection Example](Phishing.jpg)
 *Example: Benign content detection with 88.8% confidence*
 
 ---
