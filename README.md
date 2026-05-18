@@ -6,11 +6,10 @@ MPEQS is a novel multimodal framework that simultaneously detects **Phishing Ema
 
 ---
 ## 📸 Project Preview
-
-![Phishing Detection Example](Phishing pic.jpg)
+![Phishing Detection Example](./Phishing%20pic.jpg)
 *Example: Email phishing detection with 89% confidence*
 
-![Benign Detection Example](Phishing pic1.jpg)
+![Benign Detection Example](./Phishing%20pic1.jpg)
 *Example: Benign content detection with 88.8% confidence*
 
 ---
