@@ -7,6 +7,8 @@ import cv2
 import os
 import pandas as pd
 import random
+import requests
+import gdown
 from flask import Flask, request, jsonify, render_template_string
 from flask_cors import CORS
 from transformers import ElectraModel, ElectraTokenizer, DistilBertModel, DistilBertTokenizer
@@ -16,7 +18,48 @@ from sklearn.model_selection import train_test_split
 import warnings
 warnings.filterwarnings('ignore')
 
+# ============================================
+# MODEL DOWNLOAD FUNCTION
+# ============================================
+def download_model(url, output_path, is_google_drive=True):
+    """Download model file if it doesn't exist"""
+    # Create directory if it doesn't exist
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    
+    if not os.path.exists(output_path):
+        print(f"📥 Downloading model from {url}...")
+        print(f"   This may take a few minutes. File size: ~300MB")
+        
+        try:
+            if is_google_drive and 'drive.google.com' in url:
+                # For Google Drive links
+                gdown.download(url, output_path, quiet=False)
+            else:
+                # For direct URLs
+                response = requests.get(url, stream=True)
+                with open(output_path, 'wb') as f:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        f.write(chunk)
+            print(f"✅ Model downloaded to {output_path}")
+        except Exception as e:
+            print(f"❌ Download failed: {e}")
+            raise
+    else:
+        print(f"✅ Model already exists at {output_path}")
 
+# ============================================
+# YOUR GOOGLE DRIVE LINKS
+# ============================================
+MODEL_PTH_URL = "https://drive.google.com/file/d/1Y4TQqoKUc9AvPFpqNTI_W52AsNd4uObk/view?usp=drive_link"
+MODEL_PKL_URL = "https://drive.google.com/file/d/1LKTsV-hBGog-wZHEWmJoGpt6Odkf8KoA/view?usp=drive_link"
+
+# Download models before loading
+download_model(MODEL_PTH_URL, 'notebook/saved_models/mpeqs_model.pth', is_google_drive=True)
+download_model(MODEL_PKL_URL, 'notebook/saved_models/mpeqs_model.pkl', is_google_drive=True)
+
+# ============================================
+# LOAD MODEL
+# ============================================
 print("="*60)
 print("Loading MPEQS Cell 1 Model...")
 print("="*60)
@@ -129,7 +172,6 @@ class EmailClassifier:
         print("Training EMAIL Classifier (ELECTRA + Random Forest)")
         print("="*60)
         
-        
         human_legit = pd.read_csv('notebook/datasets/email_dataset/legit.csv').head(2000)
         llm_legit = pd.read_csv('notebook/datasets/email_dataset/llm_legit.csv').head(1000)
         
@@ -152,14 +194,11 @@ class EmailClassifier:
         
         print(f"  Extracted {len(benign_features)} BENIGN email features")
         
-        
         print("  Creating negative samples...")
         negative_features = []
         for feat in benign_features[:len(benign_features)//2]:
-            
             noise = np.random.normal(0, 0.1, feat.shape)
             negative_features.append(feat + noise)
-        
         
         benign_features = np.array(benign_features)
         negative_features = np.array(negative_features)
@@ -214,7 +253,6 @@ class SMSClassifier:
         
         smishing_df = pd.read_csv('notebook/datasets/smishing_dataset/Dataset_10191.csv')
         
-        
         benign_sms = smishing_df[smishing_df['LABEL'] == 'ham']['TEXT'].astype(str).tolist()[:1000]
         
         print(f"  Extracting features from {len(benign_sms)} BENIGN SMS...")
@@ -227,7 +265,6 @@ class SMSClassifier:
                 benign_features.append(features)
         
         print(f"  Extracted {len(benign_features)} BENIGN SMS features")
-        
         
         print("  Creating negative samples...")
         negative_features = []
@@ -274,7 +311,6 @@ class QRImageClassifier:
         qr_features = []
         qr_labels = []
         
-        
         benign_folder = 'notebook/datasets/quishing_dataset/benign_qr'
         if os.path.exists(benign_folder):
             for file in os.listdir(benign_folder):
@@ -291,7 +327,6 @@ class QRImageClassifier:
                         qr_features.append(features)
                         qr_labels.append(0)
             print(f"  Loaded {qr_labels.count(0)} Benign QR images")
-        
         
         malicious_folder = 'notebook/datasets/quishing_dataset/malicious_qr'
         if os.path.exists(malicious_folder):
@@ -582,10 +617,8 @@ def predict():
         if not sms_text or sms_text.strip() == '':
             sms_text = "No SMS provided"
         
-        
         email_enc = email_tokenizer(email_text, max_length=256, padding='max_length', truncation=True, return_tensors='pt')
         sms_enc = sms_tokenizer(sms_text, max_length=128, padding='max_length', truncation=True, return_tensors='pt')
-        
         
         qr_tensor = None
         if qr_file and qr_file.filename:
@@ -600,7 +633,6 @@ def predict():
         sms_input_ids = sms_enc['input_ids'].to(device)
         sms_attention_mask = sms_enc['attention_mask'].to(device)
         
-        
         with torch.no_grad():
             logits = model(email_input_ids, email_attention_mask, qr_images, sms_input_ids, sms_attention_mask)
             probabilities = torch.softmax(logits, dim=1).cpu().numpy()[0]
@@ -608,7 +640,6 @@ def predict():
         
         final_class = class_names[predicted_class]
         corrected_types = []
-        
         
         if qr_tensor is not None and qr_file and qr_file.filename:
             confidence, is_malicious = qr_classifier.predict(qr_tensor)
@@ -623,14 +654,12 @@ def predict():
                     corrected_types.append('qr_benign')
                     print(f"✓ QR: Benign (conf: {confidence:.2%}) → Benign")
         
-        
         if email_text and email_text != "No email provided" and final_class != 'Benign':
             legit_score, is_legitimate = email_classifier.predict(email_text)
             if is_legitimate and legit_score > 0.65:
                 final_class = 'Benign'
                 corrected_types.append('email')
                 print(f"✓ Email corrected (score: {legit_score:.2f})")
-        
         
         if sms_text and sms_text != "No SMS provided" and final_class != 'Benign':
             legit_score, is_legitimate = sms_classifier.predict(sms_text)

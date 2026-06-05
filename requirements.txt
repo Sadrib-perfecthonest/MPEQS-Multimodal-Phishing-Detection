@@ -1,4 +1,6 @@
 --extra-index-url https://download.pytorch.org/whl/cpu
+gdown
+requests
 torch
 torchvision
 transformers
