@@ -1,8 +1,65 @@
-.venvpy3.10.0/
+# Large model files - DO NOT commit to git
+*.pkl
+*.pth
+*.pt
+*.bin
+*.h5
+*.keras
+*.onnx
+notebook/saved_models/
 saved_models/
+models/
+
+# Virtual environment
+venv/
+venvpy3.10.0/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Jupyter Notebook
 .ipynb_checkpoints/
-.env
+*.ipynb_checkpoints/
+
+# IDE
 .vscode/
 .idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*.bak
+
+# Logs and databases
+*.log
+*.sql
+*.sqlite
+
+# Environment variables
+.env
+.venv
+.envrc
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
