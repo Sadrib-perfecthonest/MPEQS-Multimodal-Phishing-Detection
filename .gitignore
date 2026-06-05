@@ -1,5 +1,5 @@
 .venvpy3.10.0/
-notebook/saved_models/
+saved_models/
 *.pkl
 *.pth
 __pycache__/
