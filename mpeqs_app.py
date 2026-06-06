@@ -8,7 +8,6 @@ import os
 import pandas as pd
 import random
 import requests
-import gdown
 from flask import Flask, request, jsonify, render_template_string
 from flask_cors import CORS
 from transformers import ElectraModel, ElectraTokenizer, DistilBertModel, DistilBertTokenizer
@@ -18,67 +17,51 @@ from sklearn.model_selection import train_test_split
 import warnings
 warnings.filterwarnings('ignore')
 
-# ============================================
-# MODEL DOWNLOAD FUNCTION
-# ============================================
-def download_model(url, output_path, is_google_drive=True):
-    """Download model file if it doesn't exist"""
-    # Create directory if it doesn't exist
+
+def download_model(url, output_path):
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     
     if not os.path.exists(output_path):
-        print(f"📥 Downloading model from {url}...")
-        print(f"   This may take a few minutes. File size: ~300MB")
+        print(f"Downloading model from {url}...")
         
-        try:
-            if is_google_drive and 'drive.google.com' in url:
-                # For Google Drive links
-                gdown.download(url, output_path, quiet=False)
-            else:
-                # For direct URLs
-                response = requests.get(url, stream=True)
-                with open(output_path, 'wb') as f:
-                    for chunk in response.iter_content(chunk_size=8192):
-                        f.write(chunk)
-            print(f"✅ Model downloaded to {output_path}")
-        except Exception as e:
-            print(f"❌ Download failed: {e}")
-            raise
+        response = requests.get(url, stream=True)
+        response.raise_for_status()
+        
+        with open(output_path, 'wb') as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                f.write(chunk)
+        print(f"Model downloaded to {output_path}")
     else:
-        print(f"✅ Model already exists at {output_path}")
+        print(f"Model already exists at {output_path}")
 
-# ============================================
-# YOUR GOOGLE DRIVE LINKS
-# ============================================
-MODEL_PTH_URL = "https://drive.google.com/file/d/1Y4TQqoKUc9AvPFpqNTI_W52AsNd4uObk/view?usp=drive_link"
-MODEL_PKL_URL = "https://drive.google.com/file/d/1LKTsV-hBGog-wZHEWmJoGpt6Odkf8KoA/view?usp=drive_link"
 
-# Download models before loading
-download_model(MODEL_PTH_URL, 'notebook/saved_models/mpeqs_model.pth', is_google_drive=True)
-download_model(MODEL_PKL_URL, 'notebook/saved_models/mpeqs_model.pkl', is_google_drive=True)
+MODEL_PTH_URL = "https://huggingface.co/Sadrib-111/mpeqs-model/resolve/main/mpeqs_model.pt"
+MODEL_PKL_URL = "https://huggingface.co/Sadrib-111/mpeqs-model/resolve/main/mpeqs_model.pkl"
 
-# ============================================
-# LOAD MODEL
-# ============================================
+
+download_model(MODEL_PTH_URL, 'notebook/saved_models/mpeqs_model.pt')
+download_model(MODEL_PKL_URL, 'notebook/saved_models/mpeqs_model.pkl')
+
+
 print("="*60)
 print("Loading MPEQS Cell 1 Model...")
 print("="*60)
 
 try:
-    model_state = torch.load('notebook/saved_models/mpeqs_model.pth', map_location='cpu')
-    print("✓ Loaded from mpeqs_model.pth")
+    model_state = torch.load('notebook/saved_models/mpeqs_model.pt', map_location='cpu')
+    print("Loaded from mpeqs_model.pt")
 except:
     with open('notebook/saved_models/mpeqs_model.pkl', 'rb') as f:
         artifacts = pickle.load(f)
     model_state = artifacts['model_state_dict']
     class_names = artifacts['model_config']['class_names']
-    print("✓ Loaded from mpeqs_model.pkl")
+    print("Loaded from mpeqs_model.pkl")
 
 class_names = ['Benign', 'Phishing-only', 'Quishing-only', 'Smishing-only', 'Mixed Attack']
-print(f"✓ Class names: {class_names}")
+print(f"Class names: {class_names}")
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-print(f"✓ Using device: {device}")
+print(f"Using device: {device}")
 
 class CrossAttention(nn.Module):
     def __init__(self, dim=256, heads=4):
@@ -139,12 +122,11 @@ model = MPEQSModel()
 model.load_state_dict(model_state)
 model.to(device)
 model.eval()
-print("✓ Cell 1 model loaded successfully")
+print("Cell 1 model loaded successfully")
 
-# Load tokenizers
 email_tokenizer = ElectraTokenizer.from_pretrained('google/electra-small-discriminator')
 sms_tokenizer = DistilBertTokenizer.from_pretrained('distilbert-base-uncased')
-print("✓ Tokenizers loaded")
+print("Tokenizers loaded")
 
 class EmailClassifier:
     def __init__(self):
@@ -177,10 +159,10 @@ class EmailClassifier:
         
         benign_features = []
         
-        print("  Extracting features from BENIGN emails...")
+        print("Extracting features from BENIGN emails...")
         for idx, row in human_legit.iterrows():
             if idx % 500 == 0:
-                print(f"    Processed {idx}/{len(human_legit)}")
+                print(f"Processed {idx}/{len(human_legit)}")
             text = str(row['body'])[:512]
             if len(text) > 20:
                 features = self.extract_email_features(text)
@@ -192,9 +174,9 @@ class EmailClassifier:
                 features = self.extract_email_features(text)
                 benign_features.append(features)
         
-        print(f"  Extracted {len(benign_features)} BENIGN email features")
+        print(f"Extracted {len(benign_features)} BENIGN email features")
         
-        print("  Creating negative samples...")
+        print("Creating negative samples...")
         negative_features = []
         for feat in benign_features[:len(benign_features)//2]:
             noise = np.random.normal(0, 0.1, feat.shape)
@@ -206,14 +188,14 @@ class EmailClassifier:
         X = np.vstack([benign_features, negative_features])
         y = np.array([1] * len(benign_features) + [0] * len(negative_features))
         
-        print(f"  Total: {len(X)} samples (Benign: {sum(y==1)}, Not Benign: {sum(y==0)})")
+        print(f"Total: {len(X)} samples (Benign: {sum(y==1)}, Not Benign: {sum(y==0)})")
         
         X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)
         self.classifier.fit(X_train, y_train)
         accuracy = self.classifier.score(X_val, y_val)
         
         self.is_trained = True
-        print(f"  ✅ Email classifier trained! Validation accuracy: {accuracy:.2%}")
+        print(f"Email classifier trained! Validation accuracy: {accuracy:.2%}")
     
     def predict(self, text):
         if not text or len(text) < 20 or not self.is_trained:
@@ -255,18 +237,18 @@ class SMSClassifier:
         
         benign_sms = smishing_df[smishing_df['LABEL'] == 'ham']['TEXT'].astype(str).tolist()[:1000]
         
-        print(f"  Extracting features from {len(benign_sms)} BENIGN SMS...")
+        print(f"Extracting features from {len(benign_sms)} BENIGN SMS...")
         benign_features = []
         for i, text in enumerate(benign_sms):
             if i % 200 == 0:
-                print(f"    Processed {i}/{len(benign_sms)}")
+                print(f"Processed {i}/{len(benign_sms)}")
             if len(text) > 10:
                 features = self.extract_sms_features(text)
                 benign_features.append(features)
         
-        print(f"  Extracted {len(benign_features)} BENIGN SMS features")
+        print(f"Extracted {len(benign_features)} BENIGN SMS features")
         
-        print("  Creating negative samples...")
+        print("Creating negative samples...")
         negative_features = []
         for feat in benign_features[:len(benign_features)//2]:
             noise = np.random.normal(0, 0.1, feat.shape)
@@ -278,14 +260,14 @@ class SMSClassifier:
         X = np.vstack([benign_features, negative_features])
         y = np.array([1] * len(benign_features) + [0] * len(negative_features))
         
-        print(f"  Total: {len(X)} samples (Benign: {sum(y==1)}, Not Benign: {sum(y==0)})")
+        print(f"Total: {len(X)} samples (Benign: {sum(y==1)}, Not Benign: {sum(y==0)})")
         
         X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)
         self.classifier.fit(X_train, y_train)
         accuracy = self.classifier.score(X_val, y_val)
         
         self.is_trained = True
-        print(f"  ✅ SMS classifier trained! Validation accuracy: {accuracy:.2%}")
+        print(f"SMS classifier trained! Validation accuracy: {accuracy:.2%}")
     
     def predict(self, text):
         if not text or len(text) < 10 or not self.is_trained:
@@ -326,7 +308,7 @@ class QRImageClassifier:
                         
                         qr_features.append(features)
                         qr_labels.append(0)
-            print(f"  Loaded {qr_labels.count(0)} Benign QR images")
+            print(f"Loaded {qr_labels.count(0)} Benign QR images")
         
         malicious_folder = 'notebook/datasets/quishing_dataset/malicious_qr'
         if os.path.exists(malicious_folder):
@@ -343,10 +325,10 @@ class QRImageClassifier:
                         
                         qr_features.append(features)
                         qr_labels.append(1)
-            print(f"  Loaded {qr_labels.count(1)} Malicious QR images")
+            print(f"Loaded {qr_labels.count(1)} Malicious QR images")
         
         if len(qr_features) < 5:
-            print("  ⚠️ Not enough QR images for training!")
+            print("Not enough QR images for training!")
             self.is_trained = False
             return
         
@@ -358,9 +340,9 @@ class QRImageClassifier:
         self.classifier.fit(X_train, y_train)
         accuracy = self.classifier.score(X_test, y_test)
         
-        print(f"\n  ✅ QR Classifier trained!")
-        print(f"  Total samples: {len(qr_features)}")
-        print(f"  Validation Accuracy: {accuracy:.2%}")
+        print(f"\nQR Classifier trained!")
+        print(f"Total samples: {len(qr_features)}")
+        print(f"Validation Accuracy: {accuracy:.2%}")
         self.is_trained = True
     
     def predict(self, qr_tensor):
@@ -519,7 +501,7 @@ HTML_TEMPLATE = '''
             const qr_file = document.getElementById('qr_image').files[0];
             
             if (!email_text && !sms_text && !qr_file) {
-                alert('⚠️ Please provide at least one input');
+                alert('Please provide at least one input');
                 return;
             }
             
@@ -536,7 +518,7 @@ HTML_TEMPLATE = '''
                 const data = await response.json();
                 displayResult(data);
             } catch (error) {
-                alert('❌ Error: ' + error);
+                alert('Error: ' + error);
             }
             document.getElementById('loading').style.display = 'none';
         }
@@ -578,7 +560,7 @@ HTML_TEMPLATE = '''
                 <div class="result-title ${isBenign ? 'benign' : 'phishing'}">${class_name}</div>
                 <div class="result-confidence">Confidence: ${confidence}%</div>
                 <div class="result-badges">${badges}</div>
-                <div class="result-message"><strong>🔐 Analysis Result</strong><br><br>${message}</div>
+                <div class="result-message"><strong>Analysis Result</strong><br><br>${message}</div>
             `;
             resultDiv.style.display = 'block';
             resultDiv.scrollIntoView({ behavior: 'smooth' });
@@ -648,25 +630,25 @@ def predict():
                 if is_malicious and confidence > 0.6:
                     final_class = 'Quishing-only'
                     corrected_types.append('qr_malicious')
-                    print(f"✓ QR: Malicious (conf: {confidence:.2%}) → Quishing-only")
+                    print(f"QR: Malicious (conf: {confidence:.2%}) → Quishing-only")
                 elif not is_malicious and confidence > 0.6:
                     final_class = 'Benign'
                     corrected_types.append('qr_benign')
-                    print(f"✓ QR: Benign (conf: {confidence:.2%}) → Benign")
+                    print(f"QR: Benign (conf: {confidence:.2%}) → Benign")
         
         if email_text and email_text != "No email provided" and final_class != 'Benign':
             legit_score, is_legitimate = email_classifier.predict(email_text)
             if is_legitimate and legit_score > 0.65:
                 final_class = 'Benign'
                 corrected_types.append('email')
-                print(f"✓ Email corrected (score: {legit_score:.2f})")
+                print(f"Email corrected (score: {legit_score:.2f})")
         
         if sms_text and sms_text != "No SMS provided" and final_class != 'Benign':
             legit_score, is_legitimate = sms_classifier.predict(sms_text)
             if is_legitimate and legit_score > 0.65:
                 final_class = 'Benign'
                 corrected_types.append('sms')
-                print(f"✓ SMS corrected (score: {legit_score:.2f})")
+                print(f"SMS corrected (score: {legit_score:.2f})")
         
         return jsonify({
             'class': final_class,
@@ -683,15 +665,15 @@ def predict():
 
 if __name__ == '__main__':
     print("\n" + "="*60)
-    print("🚀 MPEQS: Advanced Phishing Detection System")
+    print("MPEQS: Advanced Phishing Detection System")
     print("="*60)
-    print(f"🎯 Cell 1 Model: {len(class_names)} classes")
-    print("📧 Email classifier: ACTIVE")
-    print("📲 SMS classifier: ACTIVE")
-    print("📱 QR classifier: ACTIVE")
+    print(f"Cell 1 Model: {len(class_names)} classes")
+    print("Email classifier: ACTIVE")
+    print("SMS classifier: ACTIVE")
+    print("QR classifier: ACTIVE")
     
     port = int(os.environ.get('PORT', 10000))
-    print(f"\n🌐 Server running on port: {port}")
+    print(f"\nServer running on port: {port}")
     print("="*60 + "\n")
     
     app.run(host='0.0.0.0', port=port, debug=False)
