@@ -48,8 +48,8 @@ print("Loading MPEQS Cell 1 Model...")
 print("="*60)
 
 try:
-    model_state = torch.load('notebook/saved_models/mpeqs_model.pt', map_location='cpu')
-    print("Loaded from mpeqs_model.pt")
+    model_state = torch.load('notebook/saved_models/mpeqs_model.pth', map_location='cpu')
+    print("Loaded from mpeqs_model.pth")
 except:
     with open('notebook/saved_models/mpeqs_model.pkl', 'rb') as f:
         artifacts = pickle.load(f)
