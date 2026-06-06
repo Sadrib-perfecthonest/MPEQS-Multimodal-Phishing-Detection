@@ -5,3 +5,7 @@ __pycache__/
 .env
 .vscode/
 .idea/
+
+notebook/saved_models/
+*.pth
+*.pkl
