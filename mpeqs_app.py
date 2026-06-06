@@ -35,11 +35,11 @@ def download_model(url, output_path):
         print(f"Model already exists at {output_path}")
 
 
-MODEL_PTH_URL = "https://huggingface.co/Sadrib-111/mpeqs-model/resolve/main/mpeqs_model.pt"
+MODEL_PTH_URL = "https://huggingface.co/Sadrib-111/mpeqs-model/resolve/main/mpeqs_model.pth"
 MODEL_PKL_URL = "https://huggingface.co/Sadrib-111/mpeqs-model/resolve/main/mpeqs_model.pkl"
 
 
-download_model(MODEL_PTH_URL, 'notebook/saved_models/mpeqs_model.pt')
+download_model(MODEL_PTH_URL, 'notebook/saved_models/mpeqs_model.pth')
 download_model(MODEL_PKL_URL, 'notebook/saved_models/mpeqs_model.pkl')
 
 
